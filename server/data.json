@@ -1,0 +1,64 @@
+{
+  "business": {
+    "id": "biz_pulse",
+    "name": "Pulse Fitness",
+    "type": "Gym & fitness studio",
+    "phone": "+91 98765 43210",
+    "email": "hello@pulsefitness.in",
+    "address": "Andheri West, Mumbai",
+    "timezone": "Asia/Kolkata"
+  },
+  "members": [
+    {
+      "id": "mem_1",
+      "name": "Aarav Mehta",
+      "phone": "+919800000001",
+      "plan": "Premium",
+      "expiresAt": "2026-12-12",
+      "status": "active"
+    },
+    {
+      "id": "mem_2",
+      "name": "Sara Khan",
+      "phone": "+919800000002",
+      "plan": "Monthly",
+      "expiresAt": "2026-09-25",
+      "status": "expiring"
+    },
+    {
+      "id": "mem_3",
+      "name": "Rohan Desai",
+      "phone": "+919800000003",
+      "plan": "Quarterly",
+      "expiresAt": "2026-11-14",
+      "status": "active"
+    }
+  ],
+  "automations": [
+    {
+      "id": "welcome",
+      "name": "Welcome new members",
+      "event": "member.created",
+      "enabled": true,
+      "delay": "Immediately",
+      "message": "Welcome to Pulse, {first_name}! We’re excited to have you."
+    },
+    {
+      "id": "expiry",
+      "name": "Membership expiration",
+      "event": "membership.expiring",
+      "enabled": true,
+      "delay": "7 days before expiry",
+      "message": "Hi {first_name}, your membership ends soon. Renew now to continue your progress."
+    },
+    {
+      "id": "payment",
+      "name": "Payment due reminder",
+      "event": "payment.overdue",
+      "enabled": true,
+      "delay": "3 days after payment due",
+      "message": "Hi {first_name}, your payment is still due."
+    }
+  ],
+  "notifications": []
+}
