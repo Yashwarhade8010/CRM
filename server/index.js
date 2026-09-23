@@ -11,6 +11,7 @@ function load(){if(!existsSync(dbFile)){mkdirSync(dir,{recursive:true});writeFil
 function save(data){writeFileSync(dbFile,JSON.stringify(data,null,2))}
 function personalize(text, member){return text.replaceAll('{first_name}',member.name.split(' ')[0])}
 function dispatch(data,{memberIds,message,kind='manual',automationId=null}){const recipients=data.members.filter(m=>memberIds==='all'||memberIds.includes(m.id));const record={id:`ntf_${Date.now()}`,kind,automationId,message,recipients:recipients.map(m=>({memberId:m.id,name:m.name,body:personalize(message,m),channel:'whatsapp',status:'queued'})),createdAt:new Date().toISOString()};data.notifications.unshift(record);return record}
+function runAutomaticRules(){const data=load(), today=new Date().toISOString().slice(0,10);data.executions??={};const rule=data.automations.find(a=>a.event==='membership.expiring'&&a.enabled);if(!rule||data.executions[`${rule.id}:${today}`])return 0;const recipients=data.members.filter(m=>m.status==='expiring');if(!recipients.length)return 0;dispatch(data,{memberIds:recipients.map(m=>m.id),message:rule.message,kind:'automatic',automationId:rule.id});data.executions[`${rule.id}:${today}`]=new Date().toISOString();save(data);return recipients.length}
 const app=express(); app.use(cors()); app.use(express.json());
 app.get('/api/health',(_,res)=>res.json({ok:true}));
 app.get('/api/business',(_,res)=>res.json(load().business));
@@ -21,5 +22,6 @@ app.get('/api/automations',(_,res)=>res.json(load().automations));
 app.patch('/api/automations/:id',(req,res)=>{const data=load();const rule=data.automations.find(a=>a.id===req.params.id);if(!rule)return res.sendStatus(404);Object.assign(rule,req.body);save(data);res.json(rule)});
 app.post('/api/notifications',(req,res)=>{const data=load();const notification=dispatch(data,{memberIds:req.body.memberIds||'all',message:req.body.message,kind:'manual'});save(data);res.status(201).json(notification)});
 app.get('/api/notifications',(_,res)=>res.json(load().notifications));
-app.post('/api/automations/run',(_,res)=>{const data=load(), rule=data.automations.find(a=>a.event==='membership.expiring'&&a.enabled);if(!rule)return res.json({sent:0});const soon=data.members.filter(m=>m.status==='expiring');if(soon.length){dispatch(data,{memberIds:soon.map(m=>m.id),message:rule.message,kind:'automatic',automationId:rule.id});save(data)}res.json({sent:soon.length})});
+app.post('/api/automations/run',(_,res)=>res.json({sent:runAutomaticRules()}));
+setInterval(runAutomaticRules,60*60*1000); // production scheduler: checks expiry rules hourly; each rule runs once per day
 app.listen(4000,()=>console.log('Pulse API running at http://localhost:4000'));
