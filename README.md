@@ -26,6 +26,17 @@ Open `http://localhost:5173` to create a gym. During local development, the new 
 
 The backend resolves the tenant from the first part of the hostname. For example, a request to `peak-performance.pulsecrm.app` is limited to the `peak-performance` gym data.
 
+## Server safeguards
+
+- In development, `X-Tenant-Slug` is supported for local testing. In production, the server resolves tenants from the request hostname and rejects a conflicting tenant header.
+- Set `NODE_ENV=production` and a comma-separated `CORS_ORIGINS` allowlist before deployment, for example `CORS_ORIGINS=https://pulsecrm.app,https://admin.pulsecrm.app`.
+- Requests are JSON-size limited, rate limited, and validated before they are persisted. Tenant discovery is intentionally disabled through the public API.
+- Member and invoice status are recalculated on read. The hourly job queues welcome, expiry, and overdue-payment notifications without repeating an expiry message or sending payment reminders more often than every three days.
+
+## Before a production SaaS launch
+
+This demo stores data in `server/data.json`, which is appropriate for local development only. Replace it with a managed PostgreSQL database and enforce tenant membership through a real identity provider before handling customer data. The application already keeps every record under a tenant boundary, so the migration should use `tenant_id` on every business table, database constraints, and row-level access policies. Deliver queued notifications through a provider such as WhatsApp Business, SMS, or email from a durable worker queue rather than the web server process.
+
 ## API overview
 
 - `POST /api/tenants` — create a gym workspace and reserve a subdomain
